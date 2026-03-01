@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { db } from "./db";
 
 function generatePrice(): number {
@@ -9,10 +10,12 @@ function generatePrice(): number {
 }
 
 export async function syncGames() {
-  const response = await fetch("https://www.freetogame.com/api/games");
+  const response = await fetch(
+    "https://www.freetogame.com/api/games?sort-by=popularity"
+  );
   const allGames = await response.json();
 
-  const selectedGames = allGames.slice(0, 50);
+  const selectedGames = allGames.slice(0, 100);
 
   for (const game of selectedGames) {
     await db.query(
@@ -28,10 +31,23 @@ export async function syncGames() {
         game.platform,
         game.publisher,
         game.release_date,
-        generatePrice()
+        generatePrice(),
       ]
     );
   }
 
-  console.log("✅ 50 games inserted into DB");
+  console.log("✅ 100 games inserted into DB");
+}
+
+// Allow running this file directly with: npx ts-node src/SyncGames.ts
+if (require.main === module) {
+  syncGames()
+    .then(() => {
+      console.log("✅ Sync finished");
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("❌ Sync failed", err);
+      process.exit(1);
+    });
 }
