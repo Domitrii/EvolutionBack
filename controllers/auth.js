@@ -81,7 +81,7 @@ async function login (req, res) {
         console.log(token);
 
 
-        const refreshToken = signRefreshToken({ userId });
+        const refreshToken = signRefreshToken({ userId: userRow.id });
         console.log(refreshToken);
 
 
