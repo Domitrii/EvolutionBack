@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { db } from "./db";
 
-function generatePrice(): number {
+function generatePrice() {
   const min = 8;
   const max = 29;
   const base = Math.floor(Math.random() * (max - min + 1)) + min;
