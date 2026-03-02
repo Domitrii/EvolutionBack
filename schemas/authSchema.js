@@ -7,6 +7,11 @@ export const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
   repeatPassword: Joi.string().min(6).valid(Joi.ref("password")).required(),
+  avatarURL: Joi.string().uri().allow(null),
+  token: Joi.string().allow(null),
+  refreshToken: Joi.string().allow(null),
+  createdAt: Joi.date().default(Date.now),
+  updatedAt: Joi.date().default(Date.now),
 });
 
 export const updateSchema = Joi.object({

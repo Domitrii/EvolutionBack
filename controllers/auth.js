@@ -3,6 +3,7 @@ import { db } from "../db.js";
 import jwt from "jsonwebtoken";
 import {registerSchema, loginSchema, updateSchema} from "../schemas/authSchema.js";
 import dotenv from "dotenv";
+import { v4 as uuidv4 } from 'uuid';
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -12,6 +13,10 @@ function toUser(row) {
   }
 
 function signToken(payload) {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: "20m" });
+  }
+
+function signRefreshToken(payload) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
   }
   
@@ -32,18 +37,21 @@ async function register (req, res){
       if (password !== repeatPassword) return res.status(400).json({error: "Passwords do not match"});
 
       const password_hash = await bcrypt.hash(password, 10);
-
-      const [result] = await db.query(
-        "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
-        [email, password_hash, name ?? null]
+      const userId = uuidv4().toString();
+      await db.query(
+        "INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)",
+        [userId, name ?? null, email, password_hash]
       );
-      const userId = result.insertId;
-      const user = toUser({ id: userId, email, name: null });
-      const token = signToken({ userId, email });
-      const refreshToken = signToken({ userId, email }, "refresh");
-      await db.query("UPDATE users SET token = ?, refreshToken = ? WHERE id = ?", [token, refreshToken, userId]);
-      res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", maxAge: 7 * 24 * 60 * 60 * 1000 });
-      res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", maxAge: 15 * 60 * 1000 });
+
+      const token = signToken({ userId });
+      const refreshToken = signRefreshToken({ userId });
+
+      await db.query("UPDATE users SET token = ?, refresh_token = ? WHERE id = ?", [token, refreshToken, userId]);
+
+      const user = { id: userId, email, name: name ?? null };
+
+    //   res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", maxAge: 7 * 24 * 60 * 60 * 1000 });
+    //   res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", maxAge: 15 * 60 * 1000 });
       return res.status(201).json({ user, token, refreshToken });
     } catch (err) {
       console.error("Register error:", err);
@@ -66,13 +74,21 @@ async function login (req, res) {
         if (!userRow || !(await bcrypt.compare(password, userRow.password_hash))) {
             return res.status(401).json({ error: "Invalid email or password" });
         }
-        const user = toUser(userRow);
-        const token = signToken({ userId: userRow.id, email: userRow.email });
-        const refreshToken = signToken({ userId: userRow.id, email: userRow.email }, "refresh");
-        await db.query("UPDATE users SET token = ?, refreshToken = ? WHERE id = ?", [token, refreshToken, userRow.id]);
-        res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", maxAge: 7 * 24 * 60 * 60 * 1000 });
-        res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", maxAge: 15 * 60 * 1000 });
-        res.json({ user, token, refreshToken });
+        const user = { id: userRow.id, email: userRow.email, name: userRow.name };
+
+        
+        const token = signToken({userId: userRow.id});
+        console.log(token);
+
+
+        const refreshToken = signRefreshToken({ userId });
+        console.log(refreshToken);
+
+
+        const result = await db.query("UPDATE users SET token = ?, refresh_token = ? WHERE id = ?", [token, refreshToken, userRow.id]);
+        // res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", maxAge: 7 * 24 * 60 * 60 * 1000 });
+        // res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", maxAge: 15 * 60 * 1000 });
+        res.json({ user, token, refreshToken, result });
     } catch (err) {
         console.error("Login error:", err);
         return res.status(500).json({ error: "Login failed" });
@@ -94,14 +110,19 @@ async function me (req, res) {
 async function logout (req, res) {
     try {
         const userId = req.userId;
-        await db.query("UPDATE users SET token = NULL, refreshToken = NULL WHERE id = ?", [userId]);
-        res.clearCookie("refreshToken");
-        res.clearCookie("token");
-        return res.json({ message: "Logged out successfully" });
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        const result = Array.isArray(await db.query("UPDATE users SET token = NULL, refresh_token = NULL WHERE id = ?", [userId])) ? result[0] : null;
+        if (!result) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        return res.json({ message: "Logged out successfully", result });
     } catch (err) {
-        console.error("Logout error:", err);
-        return res.status(500).json({ error: "Failed to logout" });
-    }
-  };
-  
-  export { register, login, me, logout };
+    console.error("Logout error:", err);
+    return res.status(500).json({ error: "Failed to logout" });
+  }
+}
+
+export { register, login, me, logout };
+
