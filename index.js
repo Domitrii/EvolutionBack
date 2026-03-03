@@ -1,8 +1,9 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import routes from "./routes/user.js";
-import authRouter from "./middleware/auth.js"
+import authRouter from "./routes/user.js";
+import favoriteRouter from "./routes/favoriteRouters.js";
+import authMiddleware from "./middleware/auth.js";
 
 const app = express();
 
@@ -16,8 +17,8 @@ app.use(
 
 app.use(express.json());
 
-app.use("/api/games", routes);
 app.use("/api/users", authRouter)
+app.use("/api/games", authMiddleware, favoriteRouter);
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
 app.listen(PORT, () => {

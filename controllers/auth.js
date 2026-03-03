@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { db } from "../db.js";
+import db from "../db.js";
 import jwt from "jsonwebtoken";
 import {registerSchema, loginSchema, updateSchema} from "../schemas/authSchema.js";
 import dotenv from "dotenv";
@@ -13,7 +13,7 @@ function toUser(row) {
   }
 
 function signToken(payload) {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: "20m" });
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: "2h" });
   }
 
 function signRefreshToken(payload) {
@@ -78,11 +78,9 @@ async function login (req, res) {
 
         
         const token = signToken({userId: userRow.id});
-        console.log(token);
 
 
         const refreshToken = signRefreshToken({ userId: userRow.id });
-        console.log(refreshToken);
 
 
         const result = await db.query("UPDATE users SET token = ?, refresh_token = ? WHERE id = ?", [token, refreshToken, userRow.id]);
