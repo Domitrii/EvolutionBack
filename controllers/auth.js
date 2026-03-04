@@ -111,11 +111,11 @@ async function logout (req, res) {
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        const result = Array.isArray(await db.query("UPDATE users SET token = NULL, refresh_token = NULL WHERE id = ?", [userId])) ? result[0] : null;
-        if (!result) {
+        const [queryResult] = await db.query("UPDATE users SET token = NULL, refresh_token = NULL WHERE id = ?", [userId]);
+        if (!queryResult.affectedRows) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        return res.json({ message: "Logged out successfully", result });
+        return res.json({ message: "Logged out successfully" });
     } catch (err) {
     console.error("Logout error:", err);
     return res.status(500).json({ error: "Failed to logout" });
