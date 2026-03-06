@@ -1,11 +1,11 @@
-import express from "express";
-import { addFavorite, removeFavorite, getFavorites, getGames, getGameById } from "../controllers/favorites.js";
+// import express from "express";
+// import { addFavorite, removeFavorite, getFavorites } from "../controllers/favorites.js";
 
-const gamesRouter = express.Router();
+// const gamesRouter = express.Router();
 
-gamesRouter.get("/favorites", getFavorites);
-gamesRouter.post("/favorites/:gameId", addFavorite);
-gamesRouter.delete("/favorites/:id", removeFavorite);
+// gamesRouter.get("/favorites", getFavorites);
+// gamesRouter.post("/favorites/:gameId", addFavorite);
+// gamesRouter.delete("/favorites/:id", removeFavorite);
 
-export default gamesRouter;
+// export default gamesRouter;
 

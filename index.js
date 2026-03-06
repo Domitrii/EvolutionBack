@@ -1,9 +1,11 @@
 import "dotenv/config";
+import "./db.js";
 import express from "express";
 import cors from "cors";
 import authRouter from "./routes/user.js";
-import gamesRouter from "./routes/favoriteRoute.js";
-import authMiddleware from "./middleware/auth.js";
+// import favoriteRouter from "./routes/favoriteRoute.js";
+// import authMiddleware from "./middleware/auth.js";
+import gamesRouter from "./routes/gamesRoute.js";
 
 const app = express();
 
@@ -18,7 +20,7 @@ app.use(
 app.use(express.json());
 
 app.use("/api/users", authRouter)
-app.use("/api/games", authMiddleware, gamesRouter);
+app.use("/api/games", gamesRouter);
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
 app.listen(PORT, () => {

@@ -1,10 +1,19 @@
-import mysql from "mysql2/promise";
+// db.js
+import mongoose from "mongoose";
 
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+const MONGODB_URI = process.env.MONGODB_URI;
 
-export default db;
+if (!MONGODB_URI) {
+  console.error("❌ MONGODB_URI environment variable is not set");
+} else {
+  mongoose
+    .connect(MONGODB_URI, { autoIndex: true })
+    .then(() => {
+      console.log("✅ Connected to MongoDB");
+    })
+    .catch((err) => {
+      console.error("❌ MongoDB connection failed:", err);
+    });
+}
+
+export default mongoose;

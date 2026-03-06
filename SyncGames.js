@@ -1,5 +1,6 @@
 import "dotenv/config";
-import { db } from "./db";
+import mongoose from "./db.js";
+import Game from "./models/Game.js";
 
 function generatePrice() {
   const min = 8;
@@ -18,36 +19,37 @@ export async function syncGames() {
   const selectedGames = allGames.slice(0, 100);
 
   for (const game of selectedGames) {
-    await db.query(
-      `INSERT IGNORE INTO games
-       (id, title, thumbnail, short_description, genre, platform, publisher, release_date, price)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        game.id,
-        game.title,
-        game.thumbnail,
-        game.short_description,
-        game.genre,
-        game.platform,
-        game.publisher,
-        game.release_date,
-        generatePrice(),
-      ]
+    await Game.updateOne(
+      { _id: game.id },
+      {
+        title: game.title,
+        thumbnail: game.thumbnail,
+        short_description: game.short_description,
+        genre: game.genre,
+        platform: game.platform,
+        publisher: game.publisher,
+        release_date: game.release_date,
+        price: generatePrice(),
+      },
+      { upsert: true }
     );
   }
 
-  console.log("✅ 100 games inserted into DB");
+  console.log("✅ 100 games inserted into MongoDB");
 }
 
-// Allow running this file directly with: npx ts-node src/SyncGames.ts
-if (require.main === module) {
+// Allow running this file directly with: node SyncGames.js
+if (import.meta.url === `file://${process.argv[1]}`) {
   syncGames()
     .then(() => {
       console.log("✅ Sync finished");
+      return mongoose.disconnect();
+    })
+    .then(() => {
       process.exit(0);
     })
     .catch((err) => {
       console.error("❌ Sync failed", err);
-      process.exit(1);
+      mongoose.disconnect().finally(() => process.exit(1));
     });
 }
