@@ -151,4 +151,36 @@ async function logout(req, res) {
   }
 }
 
-export { register, login, me, logout };
+async function update(req, res) {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { error } = updateSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    const { name, email } = req.body;
+
+    const userDoc = await User.findById(userId);
+    if (!userDoc) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    userDoc.name = name ?? userDoc.name;
+    userDoc.email = email ?? userDoc.email;
+    await userDoc.save();
+
+    const user = toUser(userDoc);
+
+    return res.json({ user });
+  } catch (err) {
+    console.error("Update error:", err);
+    return res.status(500).json({ error: "Failed to update user" });
+  }
+}
+
+export { register, login, me, logout, update };
