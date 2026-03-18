@@ -51,8 +51,13 @@ async function removeFavorite(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    const numericGameId = Number(id);
+    if (Number.isNaN(numericGameId)) {
+      return res.status(400).json({ error: "Invalid game id" });
+    }
+
     const deleted = await Favorite.findOneAndDelete({
-      _id: id,
+      gameId: numericGameId,
       userId,
     });
 
