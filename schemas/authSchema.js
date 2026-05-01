@@ -24,3 +24,8 @@ export const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
 })
+
+export const purchaseSchema = Joi.object({
+  userId: Joi.string().required(),
+  games: Joi.array().required()
+})

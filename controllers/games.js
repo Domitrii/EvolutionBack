@@ -1,4 +1,5 @@
 import Game from "../models/Game.js";
+import { purchaseSchema } from "../schemas/authSchema.js";
 
 async function getGames(req, res) {
   try {
@@ -10,15 +11,14 @@ async function getGames(req, res) {
   }
 }
 
-async function getGameById(req, res) {
+const getGameById = async (req, res) => {
   try {
     const { id } = req.params;
-    const numericGameId = Number(id);
-    if (Number.isNaN(numericGameId)) {
-      return res.status(400).json({ error: "Invalid game id" });
-    }
+    console.log("Looking for game with id:", id) // ← add this
 
-    const game = await Game.findById(numericGameId).lean();
+    const game = await Game.findById(id).lean();
+    console.log("Found game:", game) // ← and this
+    
     if (!game) {
       return res.status(404).json({ error: "Game not found" });
     }
@@ -30,4 +30,18 @@ async function getGameById(req, res) {
   }
 }
 
-export { getGames, getGameById }
+async function buyBasket(req, res) {
+  try{
+    console.log(req)
+    const {error} = purchaseSchema.validate(req.body)
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    return req
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export { getGames, getGameById, buyBasket }
